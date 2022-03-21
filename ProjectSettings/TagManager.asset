@@ -5,16 +5,20 @@ TagManager:
   serializedVersion: 2
   tags:
   - Item Slot
+  - Ball
+  - Floor
+  - CollectableBall
+  - Slope
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Player
   - Water
   - UI
-  - 
-  - 
-  - 
+  - Floor
+  - Ball
+  - CollectableBall
   - 
   - 
   - 
