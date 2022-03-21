@@ -24,7 +24,7 @@ public class Ball : MonoBehaviour
     private float startJumpHeight;
     private float floorHeight = 0;
     private float orderInStack;
-    private float extraDashForce = 0;
+    private float lastDashTime;
 
     // sets with dash function
     private bool isDashing = false; // false with stop
@@ -38,16 +38,19 @@ public class Ball : MonoBehaviour
     {
         if (isJumping && !killed)
         {
-            if (isDashing)
-            {
-                extraDashForce += Time.deltaTime * dashAcceleration;
-            }
-
             float time = Time.time - lastJumpTime;
-            float currentJumpHeight = ((initialUpVelocity + gravity * gravityMultiplier * time / 2) * time) - (extraDashForce * extraDashForce);
-            float nextHeight;
+            float currentJumpHeight = (initialUpVelocity + (gravity * gravityMultiplier * time / 2)) * time;
+            float currentSpeed = initialUpVelocity + (gravity * gravityMultiplier * time);
 
-            float currentSpeed = initialUpVelocity + gravity * gravityMultiplier * (Time.time - lastJumpTime);
+            if (isDashing) 
+            {
+                float dashTime = (Time.time - lastDashTime);
+                currentJumpHeight -= dashAcceleration * dashTime * dashTime / 2;
+                currentSpeed -= dashAcceleration * dashTime;
+            }
+            
+            float nextHeight;
+            //print((startJumpHeight + currentJumpHeight + antiErrorOffset).ToString() + " " + (floorHeight + (orderInStack * squishedOffset)).ToString() + " " + currentSpeed.ToString());
             if (startJumpHeight + currentJumpHeight + antiErrorOffset < floorHeight + (orderInStack * squishedOffset) && currentSpeed < 0)
             {
                 nextHeight = floorHeight + orderInStack * squishedOffset;
@@ -86,7 +89,6 @@ public class Ball : MonoBehaviour
         this.startJumpHeight = startJumpHeight;
         this.orderInStack = orderInStack;
         initialUpVelocity = Mathf.Sqrt(jumpHeight * -2.0f * gravity * gravityMultiplier);
-        extraDashForce = 0;
         willJump = false;
         isJumping = true;
     }
@@ -95,6 +97,7 @@ public class Ball : MonoBehaviour
     {
         if (isJumping)
         {
+            lastDashTime = Time.time;
             isDashing = true;
         }
     }

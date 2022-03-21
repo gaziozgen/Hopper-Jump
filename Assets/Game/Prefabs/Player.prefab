@@ -77,15 +77,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df299a7177d4df14b81313a462fbfa03, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  targetFrameRate: 0
   ballPrefab: {fileID: 7349050640071416612, guid: e308c585387909f4db66a204372c8ae4, type: 3}
   extraBallsCount: 4
   speed: 3
   minJumpHeight: 2
   maxJumpHeight: 6
-  jumpHeightChange: 1
+  jumpHeightChange: 2
   moveTimeDiff: 0.02
   minDashTimeOffset: 0.3
-  jumpHeightDiffRatio: 0.25
+  jumpHeightDiffRatio: 0.3
   squishedOffset: 0.7
   myBall: {fileID: 1686546868928838131}
   ballParent: {fileID: 2087714254700266655}

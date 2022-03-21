@@ -14,17 +14,25 @@ public class LevelGenerator : MonoBehaviour
     {
         Debug.Log("Generate");
 
-        GenerateFlatSurface(0, 10);
-
-        GenerateFlatSurface(0, 10);
+        GenerateFlatSurface(0, 10);/*
         GenerateFlatSurface(0, 10);
         GenerateFlatSurface(0, 10);
-        GenerateFlatSurface(0, 10);
-        /*GenerateFlatSurface(-5, 10);
-        GenerateFlatSurface(4, 1);
-        GenerateFlatSurface(-4, 10);
-        GenerateSlope(5, 10);
         GenerateFlatSurface(0, 10);*/
+        GenerateFlatSurface(5, 1);
+        GenerateFlatSurface(-5, 10);
+        GenerateFlatSurface(-4, 10);
+        GenerateFlatSurface(2, 5);
+        GenerateFlatSurface(2, 5);
+        GenerateFlatSurface(2, 5);
+        GenerateSlope(5, 10);
+        GenerateFlatSurface(0, 10);
+        GenerateFlatSurface(5, 2);
+        GenerateFlatSurface(-3, 8);
+        GenerateFlatSurface(3, 6);
+        GenerateFlatSurface(3, 6);
+        GenerateFlatSurface(3, 6);
+        GenerateFlatSurface(0, 10);
+        GenerateFlatSurface(0, 10);
     }
 
     private void GenerateFlatSurface(float heigth, float length)

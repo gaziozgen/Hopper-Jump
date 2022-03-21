@@ -5,6 +5,7 @@ using UnityEngine;
 public class Floor : MonoBehaviour
 {
     [SerializeField] private Transform generalMesh = null;
+    [SerializeField] private MeshRenderer meshToChangeColor = null;
     [HideInInspector] public Transform _transform = null;
 
     private void Awake()
@@ -15,6 +16,7 @@ public class Floor : MonoBehaviour
     public void Setup(float length)
     {
         generalMesh.localScale = new Vector3(1, 1, length);
+        meshToChangeColor.material.color = Random.ColorHSV();
     }
 
     public float GetHeight()

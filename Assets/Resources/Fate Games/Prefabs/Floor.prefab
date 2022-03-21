@@ -171,8 +171,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   generalMesh: {fileID: 1617832800482546188}
-  flatSurfaceMesh: {fileID: 6512994831894749551}
-  slopeMesh: {fileID: 0}
+  meshToChangeColor: {fileID: 5408371852710237300}
   _transform: {fileID: 0}
 --- !u!1 &8800365843684004128
 GameObject:

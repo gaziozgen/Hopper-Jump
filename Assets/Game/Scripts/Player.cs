@@ -79,9 +79,8 @@ public class Player : MonoBehaviour
     {
         if (!isEnded)
         {
-            if (/*Input.GetMouseButton(0) && */!isDashing && (Time.time > lastJumpTime + currentMinDashTimeLatecy))
+            if (Input.GetMouseButton(0) && !isDashing && (Time.time > lastJumpTime + currentMinDashTimeLatecy))
             {
-                print("sadasd");
                 Dash();
             }
             MoveForward();
@@ -168,7 +167,7 @@ public class Player : MonoBehaviour
         }
         else
         {
-            currentSpeed = speed * 1.5f;
+            currentSpeed = speed * 3f;
         }
     }
 
@@ -272,8 +271,7 @@ public class Player : MonoBehaviour
 
     private void UpdateCameraTraget()
     {
-        int order = balls.Count / 2;
-        Camera.main.GetComponent<CameraFollow>().Target = balls[order]._transform;
+        Camera.main.GetComponent<CameraFollow>().Target = balls[balls.Count -1]._transform;
     }
 
     private void RecalculateMinDashTime()

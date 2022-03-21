@@ -159,8 +159,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isFirstBall: 0
-  gravityMultiplier: 2
-  dashAcceleration: 6
+  gravityMultiplier: 3
+  dashAcceleration: 100
   mesh: {fileID: 2213990437664778342}
   squishedOffset: 0.7
   antiErrorOffset: 0.05
