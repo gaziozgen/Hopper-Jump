@@ -14,23 +14,33 @@ public class LevelGenerator : MonoBehaviour
     {
         Debug.Log("Generate");
 
-        GenerateFlatSurface(0, 10);/*
+        GenerateStart();
+
         GenerateFlatSurface(0, 10);
+        GenerateCollectableBall(-5);
+        GenerateCollectableBall(0);
         GenerateFlatSurface(0, 10);
-        GenerateFlatSurface(0, 10);*/
+        GenerateCollectableBall(-5);
         GenerateFlatSurface(5, 1);
         GenerateFlatSurface(-5, 10);
+        GenerateCollectableBall(-5);
         GenerateFlatSurface(-4, 10);
+        GenerateCollectableBall(-5);
         GenerateFlatSurface(2, 5);
         GenerateFlatSurface(2, 5);
         GenerateFlatSurface(2, 5);
         GenerateSlope(5, 10);
         GenerateFlatSurface(0, 10);
+        GenerateCollectableBall(-5);
         GenerateFlatSurface(5, 2);
         GenerateFlatSurface(-3, 8);
         GenerateFlatSurface(3, 6);
         GenerateFlatSurface(3, 6);
         GenerateFlatSurface(3, 6);
+        GenerateFlatSurface(0, 10);
+        GenerateFlatSurface(0, 10);
+        GenerateFlatSurface(0, 10);
+        GenerateFlatSurface(0, 10);
         GenerateFlatSurface(0, 10);
         GenerateFlatSurface(0, 10);
     }
@@ -51,6 +61,11 @@ public class LevelGenerator : MonoBehaviour
         currentZ += length;
     }
 
+    private void GenerateCollectableBall(float offsetOnLastFloor)
+    {
+        InstantiatePrefab("CollectableBall", new Vector3(0, currentY, currentZ + offsetOnLastFloor), Quaternion.identity, levelParent);
+    }
+
     public GameObject InstantiatePrefab(string name, Vector3 position, Quaternion rotation, Transform parent)
     {
         GameObject variableForPrefab = Resources.Load("Fate Games/Prefabs/" + name, typeof(GameObject)) as GameObject;
@@ -59,6 +74,12 @@ public class LevelGenerator : MonoBehaviour
         go.name = name;
         go.transform.parent = parent;
         return go;
+    }
+
+    public void GenerateStart()
+    {
+        InstantiatePrefab("Floor", new Vector3(0, 0, -10), Quaternion.identity, levelParent);
+        InstantiatePrefab("Floor", new Vector3(0, 0, -20), Quaternion.identity, levelParent);
     }
 
     public void ResetLevel()

@@ -23,6 +23,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float jumpHeightDiffRatio = 0.25f;
     [SerializeField] private float squishedOffset = 0.7f;
 
+    [SerializeField] private Transform shadowTransform = null;
     [SerializeField] private Ball myBall = null;
     [SerializeField] private Transform ballParent = null;
     [HideInInspector] public Transform _transform = null;
@@ -99,11 +100,12 @@ public class Player : MonoBehaviour
     public void AddBall()
     {
         Vector3 targetPosition = _transform.position;
-        targetPosition.y = 0;
+        targetPosition.y = currentFloorHeight;
         Ball newBall = Instantiate(ballPrefab, targetPosition, Quaternion.identity, ballParent).GetComponent<Ball>();
         balls.Add(newBall);
         newBall.Squish();
         UpdateStackOrder();
+        newBall.UpdateFloorHeight(currentFloorHeight);
     }
 
     private void Dash()
@@ -173,6 +175,7 @@ public class Player : MonoBehaviour
 
     private void UpdateHeigthsToSlope()
     {
+        UpdateShadowPosition(true);
         float newHeigth = currentFloorHeight - ((_transform.position.z - slopeStartZ) * slopeAim);
 
         for (int i = 0; i < balls.Count; i++)
@@ -228,6 +231,7 @@ public class Player : MonoBehaviour
 
     private void UpdateFloorHeightForBalls(float floorHeight)
     {
+        UpdateShadowPosition(false);
         for (int i = balls.Count-1; i > -1; i--)
         {
             if (balls[i]._transform.position.y > currentFloorHeight)
@@ -277,5 +281,17 @@ public class Player : MonoBehaviour
     private void RecalculateMinDashTime()
     {
         currentMinDashTimeLatecy = balls.Count * moveTimeDiff + minDashTimeOffset;
+    }
+
+    private void UpdateShadowPosition(bool hide)
+    {
+        if (hide)
+        {
+            shadowTransform.localPosition = Vector3.up * -1000;
+        }
+        else
+        {
+            shadowTransform.localPosition = Vector3.up * currentFloorHeight;
+        }
     }
 }

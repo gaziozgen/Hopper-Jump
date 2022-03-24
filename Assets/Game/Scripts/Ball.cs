@@ -5,6 +5,7 @@ using UnityEngine;
 public class Ball : MonoBehaviour
 {
     [SerializeField] private bool isFirstBall = false;
+    [SerializeField] private ParticleSystem dashEffect = null;
     [SerializeField] private float gravityMultiplier = 1;
     [SerializeField] private float dashAcceleration = 6;
     [SerializeField] private Transform mesh = null;
@@ -97,6 +98,7 @@ public class Ball : MonoBehaviour
     {
         if (isJumping)
         {
+            dashEffect.Play();
             lastDashTime = Time.time;
             isDashing = true;
         }
@@ -114,6 +116,10 @@ public class Ball : MonoBehaviour
     public void UpdateOrderFromEndInStack(int newOrder)
     {
         orderInStack = newOrder;
+        if (!isJumping)
+        {
+            _transform.localPosition = Vector3.up * (floorHeight + orderInStack * squishedOffset);
+        }
     }
 
     public void Squish()
