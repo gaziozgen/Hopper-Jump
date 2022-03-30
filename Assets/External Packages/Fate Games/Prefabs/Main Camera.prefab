@@ -46,10 +46,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a9b8e6cc1cfab54983170976dac89f6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _transform: {fileID: 0}
+  UseFixedUpdate: 0
   Target: {fileID: 0}
-  Offset: {x: 0, y: 4.04, z: -6.17}
-  rotation: {x: 0, y: 0, z: 0}
-  Speed: {x: 1, y: 1, z: 1}
+  Offset: {x: 6.29, y: 3.74, z: -7.87}
+  rotation: {x: 0, y: 331.7988, z: 0}
+  Speed: {x: 3, y: 3, z: 3}
   freezeX: 0
   freezeY: 0
   freezeZ: 0
@@ -126,6 +128,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 0
   m_Antialiasing: 0
   m_AntialiasingQuality: 2

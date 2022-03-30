@@ -10,54 +10,63 @@ public class Ball : MonoBehaviour
     [SerializeField] private float dashAcceleration = 6;
     [SerializeField] private Transform mesh = null;
     [SerializeField] private float squishedOffset = 0.7f;
-    [SerializeField] private float antiErrorOffset = 0.01f;
+    [SerializeField] private Transform shadow = null;
+    [SerializeField] private MeshRenderer meshToChangeColor = null;
+    [SerializeField] GameObject trail = null;
 
     [HideInInspector] public Transform _transform = null;
+    private BallState state = BallState.WAITING;
     private float gravity = -9.8f;
-    private bool killed = false;
+
+    // general
     private bool waitingToSendFeedback = false;
+    private bool startGameOnJump = false;
+    private float floorHeight = 0;
+    private float orderInStack;
+
+    // final
+    private bool stayOnFloorOnNextJump = false;
+    private bool stopPlayer = false;
 
     // sets with jump function
-    private bool isJumping = false; // false with stop
-    private bool willJump = false; // false with jump
     private float lastJumpTime;
     private float initialUpVelocity;
     private float startJumpHeight;
-    private float floorHeight = 0;
-    private float orderInStack;
-    private float lastDashTime;
 
     // sets with dash function
-    private bool isDashing = false; // false with stop
+    private bool isDashing = false;
+    private float lastDashTime;
 
+    
     void Awake()
     {
         _transform = transform;
+        meshToChangeColor.material.color = CreateRandomColor();
+        trail.GetComponent<TrailRenderer>().startColor = meshToChangeColor.material.color;
     }
 
     private void Update()
     {
-        if (isJumping && !killed)
+        if (state == BallState.JUMPING)
         {
             float time = Time.time - lastJumpTime;
             float currentJumpHeight = (initialUpVelocity + (gravity * gravityMultiplier * time / 2)) * time;
-            float currentSpeed = initialUpVelocity + (gravity * gravityMultiplier * time);
 
-            if (isDashing) 
+            if (isDashing)
             {
                 float dashTime = (Time.time - lastDashTime);
                 currentJumpHeight -= dashAcceleration * dashTime * dashTime / 2;
-                currentSpeed -= dashAcceleration * dashTime;
             }
-            
+
             float nextHeight;
             //print((startJumpHeight + currentJumpHeight + antiErrorOffset).ToString() + " " + (floorHeight + (orderInStack * squishedOffset)).ToString() + " " + currentSpeed.ToString());
-            if (startJumpHeight + currentJumpHeight + antiErrorOffset < floorHeight + (orderInStack * squishedOffset) && currentSpeed < 0)
+            if (startJumpHeight + currentJumpHeight < floorHeight + (orderInStack * squishedOffset) && GetCurrentSpeed() < 0)
             {
                 nextHeight = floorHeight + orderInStack * squishedOffset;
                 Squish();
-                isJumping = false;
+                state = BallState.WAITING;
                 isDashing = false;
+                Player.Instance.SplashCheck(this);
             }
             else
             {
@@ -69,34 +78,45 @@ public class Ball : MonoBehaviour
         }
     }
 
-    public void JumpCommand(float latecy, float startJumpHeight, int orderInStack, float jumpHeight)
+    public void JumpCommand(float latecy, float jumpHeight)
     {
-        willJump = true;
+        state = BallState.WILL_JUMP;
         this.lastJumpTime = Time.time + latecy;
-        StartCoroutine(Jump(latecy, startJumpHeight, orderInStack, jumpHeight));
+        StartCoroutine(Jump(latecy, jumpHeight));
     }
 
-    private IEnumerator Jump(float time ,float startJumpHeight, int orderInStack, float jumpHeight)
+    private IEnumerator Jump(float time, float jumpHeight)
     {
         yield return new WaitForSeconds(time);
 
-        if (waitingToSendFeedback)
-        {
-            waitingToSendFeedback = false;
-            Player.Instance.ContinueMove();
-        }
-        
         Release();
-        this.startJumpHeight = startJumpHeight;
-        this.orderInStack = orderInStack;
-        initialUpVelocity = Mathf.Sqrt(jumpHeight * -2.0f * gravity * gravityMultiplier);
-        willJump = false;
-        isJumping = true;
+        if (stayOnFloorOnNextJump)
+        {
+            StayOnFloor();
+        }
+        else
+        {
+            state = BallState.JUMPING;
+            this.startJumpHeight = floorHeight + orderInStack * squishedOffset;
+            initialUpVelocity = Mathf.Sqrt(jumpHeight * -2.0f * gravity * gravityMultiplier);
+
+            if (waitingToSendFeedback)
+            {
+                waitingToSendFeedback = false;
+                Player.Instance.ContinueMove();
+            }
+
+            if (startGameOnJump)
+            {
+                startGameOnJump = false;
+                Player.Instance.StartGame();
+            }
+        }
     }
 
     public void DashToFloor()
     {
-        if (isJumping)
+        if (state == BallState.JUMPING)
         {
             dashEffect.Play();
             lastDashTime = Time.time;
@@ -107,7 +127,7 @@ public class Ball : MonoBehaviour
     public void UpdateFloorHeight(float newFloorHeight)
     {
         floorHeight = newFloorHeight;
-        if (!(isJumping || willJump))
+        if (state != BallState.JUMPING)
         {
             _transform.localPosition = Vector3.up * (floorHeight + orderInStack * squishedOffset);
         }
@@ -116,10 +136,22 @@ public class Ball : MonoBehaviour
     public void UpdateOrderFromEndInStack(int newOrder)
     {
         orderInStack = newOrder;
-        if (!isJumping)
+        if (state != BallState.JUMPING)
         {
             _transform.localPosition = Vector3.up * (floorHeight + orderInStack * squishedOffset);
         }
+    }
+
+    public float GetCurrentSpeed()
+    {
+        float time = Time.time - lastJumpTime;
+        float currentSpeed = initialUpVelocity + (gravity * gravityMultiplier * time);
+        if (isDashing)
+        {
+            float dashTime = (Time.time - lastDashTime);
+            currentSpeed -= dashAcceleration * dashTime;
+        }
+        return currentSpeed;
     }
 
     public void Squish()
@@ -140,28 +172,29 @@ public class Ball : MonoBehaviour
         mesh.LeanScale(Vector3.one, 0.1f);
     }
 
-    public float GetJumpState()
-    {
-        float currentSpeed = initialUpVelocity + gravity * gravityMultiplier * (Time.time - lastJumpTime);
-        if (currentSpeed > 0)
-        {
-            return 1 - (currentSpeed / initialUpVelocity);
-        }
-        else
-        {
-            return 1;
-        }
-    }
-
     public void InstantSquish()
     {
         mesh.localScale = new Vector3(1.3f, 0.7f, 1.3f);
     }
 
+    public void SetTrailActive(bool active)
+    {
+        trail.SetActive(active);
+    }
+
+    public void SetColor(Color color)
+    {
+        meshToChangeColor.material.color = color;
+    }
+
+    public Color GetColor()
+    {
+        return meshToChangeColor.material.color;
+    }
+
     public void Kill()
     {
-        //Debug.Log("destoy", this);
-        killed = true;
+        state = BallState.KILLED;
         _transform.SetParent(null);
         Release();
         Rigidbody rb = GetComponent<Rigidbody>();
@@ -175,19 +208,85 @@ public class Ball : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("CollectableBall") && other.GetComponent<CollectableBall>().GetBall())
+        CollectableBall cb = other.GetComponent<CollectableBall>();
+        if (other.CompareTag("CollectableBall") && cb.GetBall())
         {
-            Player.Instance.AddBall();
+            Player.Instance.AddBall(cb.GetColor());
         }
     }
 
-    public bool IsReadeyForLowerFloor()
+    // first ball
+    public float GetJumpStateForDash()
     {
-        if (!isJumping)
+        float currentSpeed = initialUpVelocity + gravity * gravityMultiplier * (Time.time - lastJumpTime);
+        if (currentSpeed > 0)
+        {
+            return 1 - (currentSpeed / initialUpVelocity);
+        }
+        else
+        {
+            return 1;
+        }
+    }
+
+    // first ball
+    public void StartGameWhenJump()
+    {
+        startGameOnJump = true;
+    }
+
+    // last ball
+    public bool IsReadeyForNewHeight()
+    {
+        if (state != BallState.JUMPING) // ############### bu þekilde sadece jumping durumunda geçiþ yapýlýr ######################
         {
             waitingToSendFeedback = true;
         }
-        return isJumping;
+        return state == BallState.JUMPING;
     }
 
+    // last ball
+    public BallState GetBallState()
+    {
+        return state;
+    }
+
+    // last ball
+    public void StayOnFloorOnNextJump(bool stopGame)
+    {
+        if (stopGame)
+        {
+            this.stopPlayer = stopGame;
+        }
+        stayOnFloorOnNextJump = true;
+    }
+
+    // last ball
+    private void StayOnFloor()
+    {
+        Player player = Player.Instance;
+        if (stopPlayer)
+        {
+            player.StopPlayer();
+        }
+
+        player.RemoveBallFromBalls(this);
+        _transform.parent = null;
+
+        if (!isFirstBall)
+        {
+            shadow.gameObject.SetActive(true);
+        }
+        else
+        {
+            player.FinishGame(true, 2f);
+        }
+    }
+
+    public enum BallState { WAITING, WILL_JUMP, JUMPING, KILLED }
+
+    public static Color CreateRandomColor()
+    {
+        return Random.ColorHSV(0, 1, 0.8f, 0.9f, 0.8f, 0.9f);
+    }
 }

@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Ball
-  m_Shader: {fileID: -6465566751694194690, guid: edd7abf643fa4bc4e8561d4c280c97cf, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: df5bb027d94a6c44bb32b3c31ec1303f, type: 3}
   m_ShaderKeywords: TCP2_REFLECTIONS_FRESNEL TCP2_RIM_LIGHTING_LIGHTMASK TCP2_SHADOW_LIGHT_COLOR
     TCP2_UV_NORMALS_FULL
   m_LightmapFlags: 4
@@ -131,15 +131,15 @@ Material:
     - _OutlinePixelSizeType: 0
     - _OutlineTextureLOD: 5
     - _OutlineTextureType: 0
-    - _OutlineWidth: 1
+    - _OutlineWidth: 6
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _RampBands: 4
     - _RampBandsSmoothing: 0.1
     - _RampOffset: 0
     - _RampScale: 1
-    - _RampSmoothing: 0.855
-    - _RampThreshold: 0.561
+    - _RampSmoothing: 0.349
+    - _RampThreshold: 0.466
     - _RampType: 0
     - _ReceiveShadows: 1
     - _ReceiveShadowsOff: 1
@@ -168,7 +168,7 @@ Material:
     - _UseMobileMode: 0
     - _UseNormalMap: 0
     - _UseOcclusion: 0
-    - _UseOutline: 0
+    - _UseOutline: 1
     - _UseReflections: 0
     - _UseRim: 0
     - _UseRimLightMask: 1
@@ -177,7 +177,7 @@ Material:
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.8867924, g: 0.744345, b: 0.095371954, a: 1}
+    - _BaseColor: {r: 0.9, g: 0.75705886, b: 0.09000002, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HColor: {r: 1, g: 1, b: 1, a: 1}

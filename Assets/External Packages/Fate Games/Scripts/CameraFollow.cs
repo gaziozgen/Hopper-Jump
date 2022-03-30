@@ -6,6 +6,7 @@ namespace FateGames
 {
     public class CameraFollow : MonoBehaviour
     {
+        public Transform _transform = null;
         public static CameraFollow Instance = null;
         public bool UseFixedUpdate = false;
         public Transform Target = null;
@@ -16,8 +17,13 @@ namespace FateGames
         [SerializeField] private bool freezeY = false;
         [SerializeField] private bool freezeZ = false;
 
+        private float floorHeight = 0;
+
+        private Vector3 extraOffset = Vector3.zero;
+
         private void Awake()
         {
+            _transform = transform;
             if (!Instance)
                 Instance = this;
             else
@@ -41,7 +47,7 @@ namespace FateGames
 
         private void Follow()
         {
-            Vector3 pos = Target.position + Offset;
+            Vector3 pos = Target.position + Offset + extraOffset + Vector3.up * floorHeight;
             if (freezeX)
                 pos.x = transform.position.x;
             if (freezeY)
@@ -65,6 +71,16 @@ namespace FateGames
                 pos.z = transform.position.z;
             transform.position = pos;
             transform.rotation = Quaternion.Euler(rotation);
+        }
+
+        public void UpdateFloorHeight(float height)
+        {
+            floorHeight = height;
+        }
+
+        public void UpdateFarToHeight(float heigth)
+        {
+            extraOffset = new Vector3(heigth * 0.5f, heigth * 0.5f, -heigth * 0.5f);
         }
     }
 

@@ -23,7 +23,6 @@ public class Slope : MonoBehaviour
 
     public float GetSlope()
     {
-        //print(slopeMesh.localScale.y / generalMesh.localScale.z);
         return slopeMesh.localScale.y / generalMesh.localScale.z;
     }
 }

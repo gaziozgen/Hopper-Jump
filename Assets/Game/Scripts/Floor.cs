@@ -16,7 +16,7 @@ public class Floor : MonoBehaviour
     public void Setup(float length)
     {
         generalMesh.localScale = new Vector3(1, 1, length);
-        meshToChangeColor.material.color = Random.ColorHSV(0, 1, 0.6f, 0.8f, 0.6f, 0.8f);
+        //meshToChangeColor.material.color = Random.ColorHSV(0, 1, 0.6f, 0.8f, 0.6f, 0.8f);
     }
 
     public float GetHeight()

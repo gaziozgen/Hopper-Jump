@@ -6,8 +6,12 @@ using FateGames;
 
 public class Player : MonoBehaviour
 {
+    #region hide
+
     private static Player instance;
     public static Player Instance { get => instance; }
+
+    #endregion
 
     [SerializeField] private int targetFrameRate;
 
@@ -22,23 +26,35 @@ public class Player : MonoBehaviour
     [SerializeField] private float minDashTimeOffset = 0.3f;
     [SerializeField] private float jumpHeightDiffRatio = 0.25f;
     [SerializeField] private float squishedOffset = 0.7f;
+    [SerializeField] private float slopeSpeedMultiplier = 3f;
+    [SerializeField] private float finalAreaSpeedMultiplier = 2f;
 
     [SerializeField] private Transform shadowTransform = null;
     [SerializeField] private Ball myBall = null;
     [SerializeField] private Transform ballParent = null;
+    [SerializeField] private ParticleSystem splashEffect = null;
+    [SerializeField] private ParticleSystem splashEffect2 = null;
     [HideInInspector] public Transform _transform = null;
     private List<Ball> balls = null;
 
-    private float jumpHeight;
-    private bool isDashing = false;
-    private float dashedJupmRatio;
+    // general
+    private float currentSpeed;
+    private bool isEnded = false;
+    private bool isStarted = false;
+    private bool isInFinalArea = false;
     private float currentFloorHeight = 0;
     private float nextFloorHeight;
+
+    // jump
+    private float jumpHeight;
     private float lastJumpTime;
-    private bool isEnded = false;
-    private float currentSpeed;
+
+    // dash
+    private bool isDashing = false;
+    private float dashedJupmRatio;
     private float currentMinDashTimeLatecy;
 
+    // slope
     private bool sloping = false;
     private float slopeStartZ;
     private float slopeAim;
@@ -48,12 +64,13 @@ public class Player : MonoBehaviour
         instance = this;
         Application.targetFrameRate = targetFrameRate;
         _transform = transform;
-        currentSpeed = speed;
+        currentSpeed = 0;
         jumpHeight = minJumpHeight;
         balls = new List<Ball>();
         balls.Add(myBall);
 
         // extra balls edit
+
         myBall.transform.localPosition = Vector3.up * squishedOffset * extraBallsCount;
         for (int i = 0; i < extraBallsCount; i++)
         {
@@ -63,33 +80,51 @@ public class Player : MonoBehaviour
         for (int i = 0; i < balls.Count; i++)
         {
             balls[i].InstantSquish();
+            balls[i].SetTrailActive(false);
         }
-        UpdateCameraTraget();
-        RecalculateMinDashTime();
     }
 
     private void Start()
     {
-        LeanTween.delayedCall(0.05f, () => // geliþmeli
-        {
-            Jump();
-        });
+        UpdateStackOrder();
+        Jump();
     }
 
     void Update()
     {
         if (!isEnded)
         {
-            if (Input.GetMouseButton(0) && !isDashing && (Time.time > lastJumpTime + currentMinDashTimeLatecy))
+            if ((Input.GetMouseButton(0) || isInFinalArea) && !isDashing && (Time.time > lastJumpTime + currentMinDashTimeLatecy))
             {
                 Dash();
+
+                if (!isStarted)
+                {
+                    isStarted = true;
+                    for (int i = 0; i < balls.Count; i++)
+                    {
+                        balls[i].SetTrailActive(true);
+                    }
+                    balls[0].StartGameWhenJump();
+                }
             }
             MoveForward();
         }
 
-        if (sloping) {
+        if (sloping)
+        {
             UpdateHeigthsToSlope();
         }
+
+        if (balls.Count > 0)
+        {
+            CameraFollow.Instance.UpdateFarToHeight(balls[0]._transform.position.y - currentFloorHeight);
+        }
+    }
+
+    public void StartGame()
+    {
+        currentSpeed = speed;
     }
 
     private void MoveForward()
@@ -97,15 +132,41 @@ public class Player : MonoBehaviour
         _transform.position = _transform.position + Vector3.forward * currentSpeed * Time.deltaTime;
     }
 
-    public void AddBall()
+    public void AddBall(Color color)
     {
-        Vector3 targetPosition = _transform.position;
-        targetPosition.y = currentFloorHeight;
-        Ball newBall = Instantiate(ballPrefab, targetPosition, Quaternion.identity, ballParent).GetComponent<Ball>();
+        splashEffect.Play();
+        Ball newBall = Instantiate(ballPrefab, _transform.position, Quaternion.identity, ballParent).GetComponent<Ball>();
         balls.Add(newBall);
-        newBall.Squish();
-        UpdateStackOrder();
+        newBall.SetColor(color);
+
         newBall.UpdateFloorHeight(currentFloorHeight);
+        newBall.UpdateOrderFromEndInStack(0);
+
+        Ball.BallState state = balls[balls.Count - 2].GetBallState();
+        if (state == Ball.BallState.JUMPING)
+        {
+            if (balls[balls.Count - 2].GetCurrentSpeed() < 0)
+            {
+                newBall.Squish();
+            }
+            else
+            {
+                newBall.InstantSquish();
+                newBall.JumpCommand(lastJumpTime + moveTimeDiff * balls.Count - Time.time, jumpHeight-1);
+            }
+        }
+        else if (state == Ball.BallState.WILL_JUMP)
+        {
+            newBall.InstantSquish();
+            newBall.JumpCommand(lastJumpTime + moveTimeDiff * balls.Count - Time.time, jumpHeight-1);
+
+        }
+        else if (state == Ball.BallState.WAITING)
+        {
+            newBall.InstantSquish();
+        }
+
+        UpdateStackOrder();
     }
 
     private void Dash()
@@ -116,7 +177,7 @@ public class Player : MonoBehaviour
             balls[i].DashToFloor();
         }
 
-        float jumpState = balls[balls.Count - 1].GetJumpState();
+        float jumpState = balls[balls.Count - 1].GetJumpStateForDash();
         //print("dashed height: " + jumpState.ToString());
         dashedJupmRatio = jumpState;
 
@@ -126,62 +187,67 @@ public class Player : MonoBehaviour
     {
         if (!sloping)
         {
+            if (isInFinalArea)
+            {
+                if (balls.Count > 1)
+                {
+                    balls[balls.Count - 1].StayOnFloorOnNextJump(false);
+                }
+                else
+                {
+                    balls[balls.Count - 1].StayOnFloorOnNextJump(true);
+                }
+            }
             lastJumpTime = Time.time;
-            //float oldJumpHeight = jumpHeight;
+            float oldJumpHeight = jumpHeight;
             if (isDashing)
             {
                 isDashing = false;
 
                 jumpHeight *= dashedJupmRatio;
                 jumpHeight += jumpHeightChange;
-
-                if (jumpHeight > maxJumpHeight)
-                {
-                    jumpHeight = maxJumpHeight;
-                }
-                else if (jumpHeight < minJumpHeight)
-                {
-                    jumpHeight = minJumpHeight;
-                }
             }
             else
             {
                 jumpHeight -= jumpHeightChange;
-
-                if (jumpHeight < minJumpHeight)
-                {
-                    jumpHeight = minJumpHeight;
-                }
             }
-            //print("jump high: " + oldJumpHeight.ToString() + " -> " + jumpHeight.ToString());
+
+            if (jumpHeight > maxJumpHeight)
+            {
+                jumpHeight = maxJumpHeight;
+            }
+            else if (jumpHeight < minJumpHeight)
+            {
+                jumpHeight = minJumpHeight;
+            }
+
+            print("jump high: " + oldJumpHeight.ToString() + " -> " + jumpHeight.ToString());
 
             float ballJumpHeight;
             int backOrderInStack;
-            float ballStartJumpHeight;
 
             for (int i = 0; i < balls.Count; i++)
             {
                 backOrderInStack = (balls.Count - i - 1);
                 ballJumpHeight = jumpHeight + backOrderInStack * jumpHeightDiffRatio;
-                ballStartJumpHeight = currentFloorHeight + backOrderInStack * squishedOffset;
-                balls[i].JumpCommand(i * moveTimeDiff, ballStartJumpHeight, backOrderInStack, ballJumpHeight);
+                balls[i].JumpCommand(i * moveTimeDiff, ballJumpHeight);
             }
         }
         else
         {
-            currentSpeed = speed * 3f;
+            currentSpeed = speed * slopeSpeedMultiplier;
         }
     }
 
     private void UpdateHeigthsToSlope()
     {
-        UpdateShadowPosition(true);
         float newHeigth = currentFloorHeight - ((_transform.position.z - slopeStartZ) * slopeAim);
 
         for (int i = 0; i < balls.Count; i++)
         {
             balls[i].UpdateFloorHeight(newHeigth);
         }
+        CameraFollow.Instance.UpdateFloorHeight(newHeigth);
     }
 
     private void OnTriggerEnter(Collider other)
@@ -190,51 +256,59 @@ public class Player : MonoBehaviour
         {
             Floor floor = other.GetComponent<Floor>();
             float floorHeight = floor.GetHeight();
-            if (currentFloorHeight != floorHeight)
-            {
-                if (currentFloorHeight > floorHeight && !sloping)
-                {
-                    if (!balls[balls.Count - 1].IsReadeyForLowerFloor())
-                    {
-                        //print("wait");
-                        currentSpeed = 0;
-                        nextFloorHeight = floorHeight;
-                    }
-                    else
-                    {
-                        currentFloorHeight = floorHeight;
-                        UpdateFloorHeightForBalls(floorHeight);
-                    }
-                }
-                else
-                {
-                    currentFloorHeight = floorHeight;
-                    UpdateFloorHeightForBalls(floorHeight);
-                }
-            }
-            
+
             if (sloping)
             {
                 sloping = false;
+                HideShadow(false);
+
                 currentSpeed = speed;
-                Jump();
+                if (balls[0].GetBallState() == Ball.BallState.WAITING)
+                {
+                    Jump();
+                }
             }
+
+            if (floorHeight != currentFloorHeight && !balls[balls.Count - 1].IsReadeyForNewHeight())
+            {
+                StopPlayer();
+                nextFloorHeight = floorHeight;
+            }
+            else
+            {
+                currentFloorHeight = floorHeight;
+                UpdateFloorHeightForBalls(floorHeight);
+            }
+
+            
         }
         else if (other.CompareTag("Slope"))
         {
             sloping = true;
+            HideShadow(true);
+
             Slope slope = other.GetComponent<Slope>();
             slopeAim = slope.GetSlope();
             slopeStartZ = slope._transform.position.z;
         }
+        else if (other.CompareTag("Final"))
+        {
+            other.GetComponent<FinalPart>().Activate();
+            if (!isInFinalArea)
+            {
+                isInFinalArea = true;
+                currentSpeed = speed * finalAreaSpeedMultiplier;
+            }
+        }
     }
 
-    private void UpdateFloorHeightForBalls(float floorHeight)
+    private void UpdateFloorHeightForBalls(float floorHeight) // and kills balls
     {
-        UpdateShadowPosition(false);
+        UpdateShadowPosition();
+        CameraFollow.Instance.UpdateFloorHeight(floorHeight);
         for (int i = balls.Count-1; i > -1; i--)
         {
-            if (balls[i]._transform.position.y > currentFloorHeight)
+            if (balls[i]._transform.position.y >= currentFloorHeight)
             {
                 balls[i].UpdateFloorHeight(floorHeight);
             }
@@ -251,31 +325,54 @@ public class Player : MonoBehaviour
         }
         else
         {
-            isEnded = true;
+            HideShadow(true);
+            FinishGame(false, 1f);
         }
     }
 
     private void UpdateStackOrder()
     {
-        for (int i = 0; i < balls.Count; i++)
+        if (balls.Count > 0)
         {
-            balls[i].UpdateOrderFromEndInStack(balls.Count - (i + 1));
+            for (int i = 0; i < balls.Count; i++)
+            {
+                balls[i].UpdateOrderFromEndInStack(balls.Count - (i + 1));
+            }
+            ChangeSplashColor();
+            RecalculateMinDashTime();
         }
-        UpdateCameraTraget();
-        RecalculateMinDashTime();
+        else
+        {
+            isEnded = true;
+        }
     }
 
     public void ContinueMove()
     {
-        //print("ContinueMove");
+        print("ContinueMove");
         currentSpeed = speed;
         currentFloorHeight = nextFloorHeight;
         UpdateFloorHeightForBalls(currentFloorHeight);
     }
 
-    private void UpdateCameraTraget()
+    public void StopPlayer()
     {
-        Camera.main.GetComponent<CameraFollow>().Target = balls[balls.Count -1]._transform;
+        print("StopPlayer");
+        currentSpeed = 0;
+    }
+
+    public void RemoveBallFromBalls(Ball ball)
+    {
+        balls.Remove(ball);
+        UpdateStackOrder();
+    }
+
+    public void SplashCheck(Ball ball)
+    {
+        if (balls[balls.Count-1] == ball)
+        {
+            splashEffect.Play();
+        }
     }
 
     private void RecalculateMinDashTime()
@@ -283,15 +380,33 @@ public class Player : MonoBehaviour
         currentMinDashTimeLatecy = balls.Count * moveTimeDiff + minDashTimeOffset;
     }
 
-    private void UpdateShadowPosition(bool hide)
+    private void UpdateShadowPosition()
     {
-        if (hide)
-        {
-            shadowTransform.localPosition = Vector3.up * -1000;
-        }
-        else
-        {
-            shadowTransform.localPosition = Vector3.up * currentFloorHeight;
-        }
+        shadowTransform.localPosition = Vector3.up * currentFloorHeight;
     }
+
+    private void HideShadow(bool hide)
+    {
+        shadowTransform.gameObject.SetActive(!hide);
+    }
+
+    private void ChangeSplashColor()
+    {
+        Color color = balls[balls.Count - 1].GetColor();
+        ParticleSystem.MainModule main = splashEffect.main;
+        main.startColor = color;
+
+        main = splashEffect2.main;
+        main.startColor = color;
+    }
+
+    public void FinishGame(bool win, float time)
+    {
+        isEnded = true;
+        LeanTween.delayedCall(time, () =>
+        {
+            GameManager.Instance.LevelManager.FinishLevel(win);
+        });
+    }
+
 }

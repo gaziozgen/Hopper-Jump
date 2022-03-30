@@ -9,6 +9,7 @@ TagManager:
   - Floor
   - CollectableBall
   - Slope
+  - Final
   layers:
   - Default
   - TransparentFX
