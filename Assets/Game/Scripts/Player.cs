@@ -132,7 +132,7 @@ public class Player : MonoBehaviour
 
     public void AddBall()
     {
-        splashEffect.Play();
+        PositionAndPlaySplashEffect();
         Ball newBall = Instantiate(ballPrefab, _transform.position, Quaternion.identity, ballParent).GetComponent<Ball>();
         balls.Add(newBall);
 
@@ -385,8 +385,14 @@ public class Player : MonoBehaviour
     {
         if (balls[balls.Count-1] == ball)
         {
-            splashEffect.Play();
+            PositionAndPlaySplashEffect();
         }
+    }
+
+    private void PositionAndPlaySplashEffect()
+    {
+        splashEffect.transform.localPosition = Vector3.up * (currentFloorHeight + 0.01f);
+        splashEffect.Play();
     }
 
     private void RecalculateMinDashTime()
