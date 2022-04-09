@@ -146,7 +146,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7656c4f6d1a4ab478eef10b67e055cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  meshToChangeColor: {fileID: 6812500290682178653}
+  shadow: {fileID: 8300235749278547925}
   _transform: {fileID: 0}
 --- !u!65 &2645469244218283373
 BoxCollider:
@@ -300,10 +300,5 @@ PrefabInstance:
 --- !u!4 &6812500291429864067 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7625869164143136709, guid: c849ff6222107024fbcf7cbab45edad9, type: 3}
-  m_PrefabInstance: {fileID: 3989726866536095046}
-  m_PrefabAsset: {fileID: 0}
---- !u!23 &6812500290682178653 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 7625869163548643611, guid: c849ff6222107024fbcf7cbab45edad9, type: 3}
   m_PrefabInstance: {fileID: 3989726866536095046}
   m_PrefabAsset: {fileID: 0}

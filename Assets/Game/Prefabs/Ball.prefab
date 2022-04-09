@@ -156,7 +156,8 @@ MonoBehaviour:
   mesh: {fileID: 2213990437664778342}
   squishedOffset: 0.7
   shadow: {fileID: 5882152280338721420}
-  meshToChangeColor: {fileID: 2213990437204113080}
+  character: {fileID: 0}
+  animationController: {fileID: 0}
   trail: {fileID: 7722351139748685559}
   _transform: {fileID: 0}
 --- !u!65 &2990571512275078910
@@ -335,7 +336,7 @@ TrailRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Time: 0.3
+  m_Time: 0.2
   m_Parameters:
     serializedVersion: 3
     widthMultiplier: 1
@@ -344,7 +345,7 @@ TrailRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0.85957444
+        value: 0.7840177
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -365,8 +366,8 @@ TrailRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 0.5566038, g: 0.5566038, b: 0.5566038, a: 1}
-      key1: {r: 1, g: 1, b: 1, a: 1}
+      key0: {r: 0.69297755, g: 0.09019607, b: 1, a: 1}
+      key1: {r: 1, g: 1, b: 1, a: 0}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
       key4: {r: 0, g: 0, b: 0, a: 0}
@@ -382,7 +383,7 @@ TrailRenderer:
       ctime6: 0
       ctime7: 0
       atime0: 0
-      atime1: 35852
+      atime1: 65535
       atime2: 65535
       atime3: 0
       atime4: 0
@@ -391,7 +392,7 @@ TrailRenderer:
       atime7: 0
       m_Mode: 0
       m_NumColorKeys: 2
-      m_NumAlphaKeys: 3
+      m_NumAlphaKeys: 2
     numCornerVertices: 0
     numCapVertices: 0
     alignment: 1
@@ -478,19 +479,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 198893393215934218, guid: f683447c6570076418716c53d120168a, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key1.a
-      value: 0.58431375
+      value: 0.7764706
       objectReference: {fileID: 0}
     - target: {fileID: 198893393215934218, guid: f683447c6570076418716c53d120168a, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key1.b
-      value: 0.735849
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 198893393215934218, guid: f683447c6570076418716c53d120168a, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key1.g
-      value: 0.735849
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 198893393215934218, guid: f683447c6570076418716c53d120168a, type: 3}
       propertyPath: ColorModule.gradient.maxGradient.key1.r
-      value: 0.735849
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f683447c6570076418716c53d120168a, type: 3}
@@ -564,10 +565,5 @@ PrefabInstance:
 --- !u!4 &2213990437664778342 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7625869164143136709, guid: c849ff6222107024fbcf7cbab45edad9, type: 3}
-  m_PrefabInstance: {fileID: 8605581790515931043}
-  m_PrefabAsset: {fileID: 0}
---- !u!23 &2213990437204113080 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 7625869163548643611, guid: c849ff6222107024fbcf7cbab45edad9, type: 3}
   m_PrefabInstance: {fileID: 8605581790515931043}
   m_PrefabAsset: {fileID: 0}

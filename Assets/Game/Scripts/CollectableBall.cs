@@ -4,18 +4,15 @@ using UnityEngine;
 
 public class CollectableBall : MonoBehaviour
 {
-    [SerializeField] private MeshRenderer meshToChangeColor = null;
+    [SerializeField] private GameObject shadow = null;
     [HideInInspector] public Transform _transform = null;
     private BoxCollider boxCollider = null;
-    private Color color;
     private bool owned = false;
 
     void Awake()
     {
         _transform = transform;
         boxCollider = GetComponent<BoxCollider>();
-        color = Ball.CreateRandomColor();
-        meshToChangeColor.material.color = color;
     }
 
     public bool GetBall()
@@ -38,9 +35,9 @@ public class CollectableBall : MonoBehaviour
         _transform.LeanScale(Vector3.zero, 0.1f);
     }
 
-    public Color GetColor()
+    public void HideShadow()
     {
-        return color;
+        shadow.SetActive(false);
     }
 
 }

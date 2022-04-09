@@ -33,15 +33,14 @@ public class Player : MonoBehaviour
     [SerializeField] private Ball myBall = null;
     [SerializeField] private Transform ballParent = null;
     [SerializeField] private ParticleSystem splashEffect = null;
-    [SerializeField] private ParticleSystem splashEffect2 = null;
     [HideInInspector] public Transform _transform = null;
     private List<Ball> balls = null;
 
     // general
+    private AreaType areaType = AreaType.BASIC;
     private float currentSpeed;
     private bool isEnded = false;
     private bool isStarted = false;
-    private bool isInFinalArea = false;
     private float currentFloorHeight = 0;
     private float nextFloorHeight;
 
@@ -55,7 +54,6 @@ public class Player : MonoBehaviour
     private float currentMinDashTimeLatecy;
 
     // slope
-    private bool sloping = false;
     private float slopeStartZ;
     private float slopeAim;
 
@@ -94,13 +92,12 @@ public class Player : MonoBehaviour
     {
         if (!isEnded)
         {
-            if ((Input.GetMouseButton(0) || isInFinalArea) && !isDashing && (Time.time > lastJumpTime + currentMinDashTimeLatecy))
+            if ((Input.GetMouseButton(0) || areaType == AreaType.FINAL) && !isDashing && (Time.time > lastJumpTime + currentMinDashTimeLatecy))
             {
                 Dash();
 
                 if (!isStarted)
                 {
-                    isStarted = true;
                     for (int i = 0; i < balls.Count; i++)
                     {
                         balls[i].SetTrailActive(true);
@@ -111,7 +108,7 @@ public class Player : MonoBehaviour
             MoveForward();
         }
 
-        if (sloping)
+        if (areaType == AreaType.SLOPE)
         {
             UpdateHeigthsToSlope();
         }
@@ -124,6 +121,7 @@ public class Player : MonoBehaviour
 
     public void StartGame()
     {
+        isStarted = true;
         currentSpeed = speed;
     }
 
@@ -132,12 +130,11 @@ public class Player : MonoBehaviour
         _transform.position = _transform.position + Vector3.forward * currentSpeed * Time.deltaTime;
     }
 
-    public void AddBall(Color color)
+    public void AddBall()
     {
         splashEffect.Play();
         Ball newBall = Instantiate(ballPrefab, _transform.position, Quaternion.identity, ballParent).GetComponent<Ball>();
         balls.Add(newBall);
-        newBall.SetColor(color);
 
         newBall.UpdateFloorHeight(currentFloorHeight);
         newBall.UpdateOrderFromEndInStack(0);
@@ -185,9 +182,9 @@ public class Player : MonoBehaviour
 
     public void Jump()
     {
-        if (!sloping)
+        if (areaType != AreaType.SLOPE)
         {
-            if (isInFinalArea)
+            if (areaType == AreaType.FINAL || areaType == AreaType.STICKY)
             {
                 if (balls.Count > 1)
                 {
@@ -199,7 +196,7 @@ public class Player : MonoBehaviour
                 }
             }
             lastJumpTime = Time.time;
-            float oldJumpHeight = jumpHeight;
+            //float oldJumpHeight = jumpHeight;
             if (isDashing)
             {
                 isDashing = false;
@@ -221,7 +218,7 @@ public class Player : MonoBehaviour
                 jumpHeight = minJumpHeight;
             }
 
-            print("jump high: " + oldJumpHeight.ToString() + " -> " + jumpHeight.ToString());
+            //print("jump high: " + oldJumpHeight.ToString() + " -> " + jumpHeight.ToString());
 
             float ballJumpHeight;
             int backOrderInStack;
@@ -241,7 +238,7 @@ public class Player : MonoBehaviour
 
     private void UpdateHeigthsToSlope()
     {
-        float newHeigth = currentFloorHeight - ((_transform.position.z - slopeStartZ) * slopeAim);
+        float newHeigth = currentFloorHeight + ((_transform.position.z - slopeStartZ) * slopeAim);
 
         for (int i = 0; i < balls.Count; i++)
         {
@@ -257,34 +254,43 @@ public class Player : MonoBehaviour
             Floor floor = other.GetComponent<Floor>();
             float floorHeight = floor.GetHeight();
 
-            if (sloping)
+            AreaType oldAreaType = areaType;
+            if (floor.GetFloorType() == Floor.FloorType.STICKY_FLOOR)
             {
-                sloping = false;
-                HideShadow(false);
-
-                currentSpeed = speed;
-                if (balls[0].GetBallState() == Ball.BallState.WAITING)
-                {
-                    Jump();
-                }
-            }
-
-            if (floorHeight != currentFloorHeight && !balls[balls.Count - 1].IsReadeyForNewHeight())
-            {
-                StopPlayer();
-                nextFloorHeight = floorHeight;
+                areaType = AreaType.STICKY;
             }
             else
             {
-                currentFloorHeight = floorHeight;
-                UpdateFloorHeightForBalls(floorHeight);
-            }
+                areaType = AreaType.BASIC;
 
-            
+                if (oldAreaType == AreaType.SLOPE)
+                {
+                    HideShadow(false);
+                    UpdateShadowPosition();
+                    currentFloorHeight = floorHeight;
+                    UpdateFloorHeightForBalls(floorHeight);
+
+                    currentSpeed = speed;
+                    if (balls[0].GetBallState() == Ball.BallState.WAITING)
+                    {
+                        Jump();
+                    }
+                }
+                else if (floorHeight != currentFloorHeight && !balls[balls.Count - 1].IsReadeyForNewHeight())
+                {
+                    StopPlayer();
+                    nextFloorHeight = floorHeight;
+                }
+                else
+                {
+                    currentFloorHeight = floorHeight;
+                    UpdateFloorHeightForBalls(floorHeight);
+                }
+            }
         }
         else if (other.CompareTag("Slope"))
         {
-            sloping = true;
+            areaType = AreaType.SLOPE;
             HideShadow(true);
 
             Slope slope = other.GetComponent<Slope>();
@@ -294,9 +300,9 @@ public class Player : MonoBehaviour
         else if (other.CompareTag("Final"))
         {
             other.GetComponent<FinalPart>().Activate();
-            if (!isInFinalArea)
+            if (areaType != AreaType.FINAL)
             {
-                isInFinalArea = true;
+                areaType = AreaType.FINAL;
                 currentSpeed = speed * finalAreaSpeedMultiplier;
             }
         }
@@ -304,6 +310,7 @@ public class Player : MonoBehaviour
 
     private void UpdateFloorHeightForBalls(float floorHeight) // and kills balls
     {
+        print("UpdateFloorHeightForBalls");
         UpdateShadowPosition();
         CameraFollow.Instance.UpdateFloorHeight(floorHeight);
         for (int i = balls.Count-1; i > -1; i--)
@@ -326,33 +333,40 @@ public class Player : MonoBehaviour
         else
         {
             HideShadow(true);
-            FinishGame(false, 1f);
+            FinishGame(1f);
         }
     }
 
     private void UpdateStackOrder()
     {
+        print("UpdateStackOrder");
         if (balls.Count > 0)
         {
             for (int i = 0; i < balls.Count; i++)
             {
                 balls[i].UpdateOrderFromEndInStack(balls.Count - (i + 1));
             }
-            ChangeSplashColor();
             RecalculateMinDashTime();
         }
         else
         {
-            isEnded = true;
+            HideShadow(true);
+            FinishGame(1f);
         }
     }
 
-    public void ContinueMove()
+    public void ContinueMoveToNextHeigth()
     {
-        print("ContinueMove");
+        print("ContinueMoveToNextHeigth");
         currentSpeed = speed;
         currentFloorHeight = nextFloorHeight;
         UpdateFloorHeightForBalls(currentFloorHeight);
+    }
+
+    public void ContinueMoveOnStickyFloor()
+    {
+        print("ContinueMoveOnStickyFloor");
+        currentSpeed = speed;
     }
 
     public void StopPlayer()
@@ -390,23 +404,30 @@ public class Player : MonoBehaviour
         shadowTransform.gameObject.SetActive(!hide);
     }
 
-    private void ChangeSplashColor()
-    {
-        Color color = balls[balls.Count - 1].GetColor();
-        ParticleSystem.MainModule main = splashEffect.main;
-        main.startColor = color;
-
-        main = splashEffect2.main;
-        main.startColor = color;
-    }
-
-    public void FinishGame(bool win, float time)
+    public void FinishGame(float time)
     {
         isEnded = true;
         LeanTween.delayedCall(time, () =>
         {
-            GameManager.Instance.LevelManager.FinishLevel(win);
+            GameManager.Instance.LevelManager.FinishLevel(areaType == AreaType.FINAL);
         });
     }
 
+    public bool IsThisLastBall(Ball ball)
+    {
+        return balls[balls.Count - 1] == ball;
+    }
+
+    public void RequestFeedbackFromNewLastBall()
+    {
+        print("RequestFeedbackFromNewLastBall");
+        balls[balls.Count - 2].SendFeedbackToMoveOnStickyFloor();
+    }
+
+    public AreaType GetAreaType()
+    {
+        return areaType;
+    }
+
+    public enum AreaType { BASIC, SLOPE, STICKY, FINAL}
 }

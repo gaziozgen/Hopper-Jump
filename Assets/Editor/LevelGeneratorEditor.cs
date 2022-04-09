@@ -23,6 +23,16 @@ public class LevelGeneratorEditor : Editor
             generator.ResetLevel();
         }
 
+        if (GUILayout.Button("Generate Environment"))
+        {
+            generator.GenerateEnvironment();
+        }
+
+        if (GUILayout.Button("Reset Environment"))
+        {
+            generator.ResetEnvironment();
+        }
+
         EditorSceneManager.MarkSceneDirty(generator.gameObject.scene);
     }
 }

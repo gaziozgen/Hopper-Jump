@@ -6,6 +6,13 @@ namespace FateGames
 {
     public class UILoseScreen : MonoBehaviour
     {
+        [SerializeField] private Text levelText = null;
+
+        private void Awake()
+        {
+            levelText.text = "LEVEL " + PlayerProgression.CurrentLevel.ToString();
+        }
+
         // Called by ContinueButton onClick
         public void Continue()
         {

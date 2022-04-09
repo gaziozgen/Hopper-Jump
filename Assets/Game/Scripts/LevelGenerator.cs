@@ -5,140 +5,123 @@ using UnityEditor;
 
 public class LevelGenerator : MonoBehaviour
 {
-
     [SerializeField] private Transform levelParent = null;
+    [SerializeField] private Transform environmentParent = null;
     [SerializeField] private float levelLength = 20f;
     private float currentZ = 0;
     private float currentY = 0;
 
     public void Generate()
     {
-
         GenerateStart();
+
+        /*float length = Random.Range(10, 20);
+        GenerateStickyFloor(length);
+        GenerateBasicFloor(10);
+
+        length = Random.Range(10, 20);
+        GenerateStickyFloor(length);
+        GenerateBasicFloor(10);
+
+        length = Random.Range(10, 20);
+        GenerateStickyFloor(length);
+        GenerateBasicFloor(10);*/
 
         while (currentZ < levelLength)
         {
-            float randomValue = Random.Range(0f, 6f);
+            GenerateBasicFloor(5);
 
-            if (5 < randomValue)
+            float randomValue = Random.Range(0f, 12f);
+            if (10 < randomValue)
             {
-                GenerateRandomSlopeSet();
+                // slope set
+
+                float length = Random.Range(5, 20);
+                float slope = -Random.Range(0.3f, 0.5f);
+
+                if (CheckMinHeight(length * slope - 1)) // offset eklenmiþ
+                    continue;
+
+                GenerateSlope(length * slope, length);
+
+                int ballCount = Random.Range(0, (int)length / 4);
+                float range = length / (ballCount + 1);
+                for (int i = 0; i < ballCount; i++)
+                {
+                    GenerateCollectableBallOnSlope(-(i + 1) * range, slope);
+                }
             }
-            else if (3 < randomValue)
+            else if (8 < randomValue)
             {
-                GenerateRandomSingleHeightSet();
+                // single height
+
+                float height = Random.Range(2, 5);
+                GenerateSingleHeigth(1, height);
             }
-            else if (1 < randomValue)
+            else if (6 < randomValue)
             {
-                GenerateRandomStairSet();
+                // stair set
+
+                int stepCount = Random.Range(2, 5);
+                float stepHeight = Random.Range(1f, 2f);
+                float stepLength = Random.Range(stepHeight + 2, stepHeight + 5);
+                for (int i = 0; i < stepCount; i++)
+                {
+                    GenerateMiniLevelUp(stepLength, stepHeight);
+                    RandomBallOnFloor(0.2f, -stepLength * 2/3);
+                }
+            }
+            else if (4 < randomValue)
+            {
+                // level heigth set
+
+                float height = Random.Range(3, 5);
+                GenerateLevelUp(10, height);
+            }
+            else if (2 < randomValue)
+            {
+                // pit set
+
+                if (CheckMinHeight(-5))
+                    continue;
+
+                GenerateLevelDown(5, -5);
+                GenerateLevelUp(5, 5);
             }
             else
             {
-                GenerateBallGroupSet();
+                // sticky floor set
+
+                GenerateStickyFloor(10);
             }
+            GenerateBasicFloor(10);
+            RandomBallOnFloor(0.5f, -5);
         }
 
         GenerateFinal();
     }
 
-    private void GenerateRandomSlopeSet()
+    private bool CheckMinHeight(float newHeigthOffset)
     {
-        Debug.Log("SlopeSet()");
-        GenerateFlatSurface(0, 5);
-
-        float length = Random.Range(10, 20);
-        float slope = Random.Range(0.3f, 0.5f);
-        GenerateSlope(length * slope, length);
-
-        int ballCount = Random.Range(0, (int)length / 4);
-        float range = length / (ballCount + 1);
-        for (int i = 0; i < ballCount; i++)
+        return false;
+        /*if (currentY + newHeigthOffset < 0)
         {
-            GenerateCollectableBallOnSlope(-(i+1) * range, slope);
+            currentZ -= 5;
+            DestroyImmediate(levelParent.GetChild(levelParent.childCount - 1).gameObject);
+            return true;
         }
-
-
-        GenerateFlatSurface(0, 10);
-        if (Random.Range(0f, 1f) < 0.4f)
+        else
         {
-            GenerateCollectableBallOnFloor(-5);
-        }
+            return false;
+        }*/
     }
 
-    private void GenerateRandomSingleHeightSet()
+    private void RandomBallOnFloor(float probability, float offset)
     {
-        Debug.Log("SingleHeightSet()");
-        GenerateFlatSurface(0, 5);
-
-        float height = Random.Range(2f, 5f);
-        GenerateFlatSurface(height, 2);
-
-
-        GenerateFlatSurface(-height, 10);
-        if (Random.Range(0f, 1f) < 0.4f)
+        if (Random.Range(0f, 1f) < probability)
         {
-            GenerateCollectableBallOnFloor(-5);
+            GenerateCollectableBallOnFloor(offset);
         }
-    }
-
-    private void GenerateRandomStairSet()
-    {
-        Debug.Log("StairSet()");
-        GenerateFlatSurface(0, 5);
-
-        int stepCount = Random.Range(2, 6);
-        float stepHeight = Random.Range(1f, 2f);
-        float stepLength = Random.Range(stepHeight + 1, stepHeight + 5);
-        for (int i = 0; i < stepCount; i++)
-        {
-            GenerateFlatSurface(stepHeight, stepLength);
-
-            if (Random.Range(0f, 1f) < 0.3f)
-            {
-                GenerateCollectableBallOnFloor(-stepLength /2);
-            }
-        }
-
-
-        GenerateFlatSurface(0, 10);
-        if (Random.Range(0f, 1f) < 0.4f)
-        {
-            GenerateCollectableBallOnFloor(-5);
-        }
-    }
-
-    private void GenerateBallGroupSet()
-    {
-        Debug.Log("GroupSet()");
-        GenerateFlatSurface(0, 5);
-
-        float length = Random.Range(10, 20);
-        int ballCount = Random.Range(0, (int)length / 6);
-        float range = length / (ballCount + 1);
-
-        GenerateFlatSurface(0, length);
-        for (int i = 0; i < ballCount; i++)
-        {
-            GenerateCollectableBallOnFloor(-(i + 1) * range);
-        }
-
-        GenerateFlatSurface(0, 10);
-    }
-
-    private void GenerateFlatSurface(float heigth, float length)
-    {
-        Floor floor = InstantiatePrefab("Floor", new Vector3(0, currentY + heigth, currentZ), Quaternion.identity, levelParent).GetComponent<Floor>();
-        floor.Setup(length);
-        currentY += heigth;
-        currentZ += length;
-    }
-
-    private void GenerateSlope(float depth, float length)
-    {
-        Slope slope = InstantiatePrefab("Slope", new Vector3(0, currentY, currentZ), Quaternion.identity, levelParent).GetComponent<Slope>();
-        slope.Setup(depth, length);
-        currentY -= depth;
-        currentZ += length;
     }
 
     private void GenerateCollectableBallOnFloor(float offsetOnLastFloor)
@@ -148,15 +131,18 @@ public class LevelGenerator : MonoBehaviour
 
     private void GenerateCollectableBallOnSlope(float offsetOnLastFloor, float slope)
     {
-        InstantiatePrefab("CollectableBall", new Vector3(0, currentY + -offsetOnLastFloor * slope, currentZ + offsetOnLastFloor), Quaternion.identity, levelParent);
+        CollectableBall cb = InstantiatePrefab("CollectableBall", new Vector3(0, currentY + offsetOnLastFloor * slope, currentZ + offsetOnLastFloor), Quaternion.identity, levelParent).GetComponent<CollectableBall>();
+        cb.HideShadow();
     }
 
     private void GenerateStart()
     {
-        InstantiatePrefab("Floor", new Vector3(0, 0, -20), Quaternion.identity, levelParent);
-        InstantiatePrefab("Floor", new Vector3(0, 0, -10), Quaternion.identity, levelParent);
+        Floor floor = InstantiatePrefab("Floor", new Vector3(0, 0, -20), Quaternion.identity, levelParent).GetComponent<Floor>();
+        floor.Setup(10);
+        floor = InstantiatePrefab("Floor", new Vector3(0, 0, -10), Quaternion.identity, levelParent).GetComponent<Floor>();
+        floor.Setup(10);
 
-        GenerateFlatSurface(0, 10);
+        GenerateBasicFloor(10);
     }
 
     private void GenerateFinal()
@@ -164,8 +150,62 @@ public class LevelGenerator : MonoBehaviour
         InstantiatePrefab("Final", new Vector3(0, currentY, currentZ), Quaternion.identity, levelParent);
     }
 
+    private void GenerateBasicFloor(float length)
+    {
+        Floor floor = InstantiatePrefab("Floor", new Vector3(0, currentY, currentZ), Quaternion.identity, levelParent).GetComponent<Floor>();
+        floor.Setup(length);
+        currentZ += length;
+    }
+
+    private void GenerateLevelUp(float length, float heigth)
+    {
+        Floor floor = InstantiatePrefab("Floor", new Vector3(0, currentY + heigth, currentZ), Quaternion.identity, levelParent).GetComponent<Floor>();
+        floor.SetupLevelUp(length, heigth);
+        currentY += heigth;
+        currentZ += length;
+    }
+
+    private void GenerateMiniLevelUp(float length, float heigth)
+    {
+        Floor floor = InstantiatePrefab("Floor", new Vector3(0, currentY + heigth, currentZ), Quaternion.identity, levelParent).GetComponent<Floor>();
+        floor.SetupMiniLevelUp(length, heigth);
+        currentY += heigth;
+        currentZ += length;
+    }
+
+    private void GenerateLevelDown(float length, float heigth)
+    {
+        Floor floor = InstantiatePrefab("Floor", new Vector3(0, currentY + heigth, currentZ), Quaternion.identity, levelParent).GetComponent<Floor>();
+        floor.SetupLevelDown(length);
+        currentY += heigth;
+        currentZ += length;
+    }
+
+    private void GenerateSingleHeigth(float length, float heigth)
+    {
+        Floor floor = InstantiatePrefab("Floor", new Vector3(0, currentY + heigth, currentZ), Quaternion.identity, levelParent).GetComponent<Floor>();
+        floor.SetupSingleHeight(length, heigth);
+        currentZ += length;
+    }
+    
+    private void GenerateStickyFloor(float length)
+    {
+        Floor floor = InstantiatePrefab("Floor", new Vector3(0, currentY, currentZ), Quaternion.identity, levelParent).GetComponent<Floor>();
+        floor.SetupStickyFloor(length);
+        currentZ += length;
+    }
+
+    private void GenerateSlope(float depth, float length)
+    {
+        Slope slope = InstantiatePrefab("Slope", new Vector3(0, currentY, currentZ), Quaternion.identity, levelParent).GetComponent<Slope>();
+        slope.Setup(depth, length);
+        currentY += depth;
+        currentZ += length;
+    }
+
     private GameObject InstantiatePrefab(string name, Vector3 position, Quaternion rotation, Transform parent)
     {
+        //return null;
         GameObject variableForPrefab = Resources.Load("Fate Games/Prefabs/" + name, typeof(GameObject)) as GameObject;
         GameObject go = PrefabUtility.InstantiatePrefab(variableForPrefab) as GameObject;
         go.transform.SetPositionAndRotation(position, rotation);
@@ -182,6 +222,37 @@ public class LevelGenerator : MonoBehaviour
         for (int i = levelParent.childCount - 1; i >= 0; i--)
         {
             DestroyImmediate(levelParent.GetChild(i).gameObject);
+        }
+    }
+
+    public void GenerateEnvironment()
+    {
+        float length = 1000;
+        float x_range = -20;
+        float x_offset = -20;
+        int z_range = 20;
+        int z_offset = 15;
+
+        float y_range = 40;
+        float y_offset = 100;
+
+        for (int i = 0; i < length; i +=  z_offset + Random.Range(0, z_range))
+        {
+            GenerateBuilding(new Vector3(x_offset + Random.Range(x_range, 0), -100, i), new Vector3(10, y_offset + Random.Range(0, y_range), 10));
+        }
+    }
+
+    public void GenerateBuilding(Vector3 position, Vector3 scale)
+    {
+        Transform t = InstantiatePrefab("Building", position, Quaternion.identity, environmentParent).transform;
+        t.localScale = scale;
+    }
+
+    public void ResetEnvironment()
+    {
+        for (int i = environmentParent.childCount - 1; i >= 0; i--)
+        {
+            DestroyImmediate(environmentParent.GetChild(i).gameObject);
         }
     }
 }

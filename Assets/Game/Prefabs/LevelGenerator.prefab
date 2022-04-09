@@ -44,3 +44,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   levelParent: {fileID: 0}
+  levelLength: 300

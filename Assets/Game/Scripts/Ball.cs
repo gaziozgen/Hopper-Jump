@@ -11,7 +11,8 @@ public class Ball : MonoBehaviour
     [SerializeField] private Transform mesh = null;
     [SerializeField] private float squishedOffset = 0.7f;
     [SerializeField] private Transform shadow = null;
-    [SerializeField] private MeshRenderer meshToChangeColor = null;
+    [SerializeField] private Character character = null;
+    [SerializeField] private Animator animationController = null;
     [SerializeField] GameObject trail = null;
 
     [HideInInspector] public Transform _transform = null;
@@ -20,9 +21,11 @@ public class Ball : MonoBehaviour
 
     // general
     private bool waitingToSendFeedback = false;
+    private bool waitingToSendStickyFloorMoveFeedback = false;
     private bool startGameOnJump = false;
     private float floorHeight = 0;
     private float orderInStack;
+    private bool goingDown = false;
 
     // final
     private bool stayOnFloorOnNextJump = false;
@@ -41,8 +44,6 @@ public class Ball : MonoBehaviour
     void Awake()
     {
         _transform = transform;
-        meshToChangeColor.material.color = CreateRandomColor();
-        trail.GetComponent<TrailRenderer>().startColor = meshToChangeColor.material.color;
     }
 
     private void Update()
@@ -66,7 +67,15 @@ public class Ball : MonoBehaviour
                 Squish();
                 state = BallState.WAITING;
                 isDashing = false;
-                Player.Instance.SplashCheck(this);
+                Player player = Player.Instance;
+                if (player.IsThisLastBall(this) && player.GetAreaType() == Player.AreaType.STICKY) {
+                    player.StopPlayer();
+                    if (!isFirstBall)
+                    {
+                        player.RequestFeedbackFromNewLastBall();
+                    }
+                }
+                player.SplashCheck(this);
             }
             else
             {
@@ -75,6 +84,20 @@ public class Ball : MonoBehaviour
 
             //_transform.localPosition = Vector3.Lerp(_transform.localPosition, Vector3.up * nextHeight, Time.fixedDeltaTime * 100);
             _transform.localPosition = Vector3.up * nextHeight;
+        }
+
+        if (isFirstBall)
+        {
+            if (GetCurrentSpeed() < -1 && !goingDown)
+            {
+                goingDown = true;
+                animationController.SetTrigger("Jump");
+            }
+            else if (GetCurrentSpeed() > -1 && goingDown)
+            {
+                goingDown = false;
+                animationController.SetTrigger("Sit");
+            }
         }
     }
 
@@ -90,7 +113,8 @@ public class Ball : MonoBehaviour
         yield return new WaitForSeconds(time);
 
         Release();
-        if (stayOnFloorOnNextJump)
+        Player.AreaType areaType = Player.Instance.GetAreaType();
+        if (stayOnFloorOnNextJump && (areaType == Player.AreaType.FINAL || areaType == Player.AreaType.STICKY))
         {
             StayOnFloor();
         }
@@ -100,16 +124,22 @@ public class Ball : MonoBehaviour
             this.startJumpHeight = floorHeight + orderInStack * squishedOffset;
             initialUpVelocity = Mathf.Sqrt(jumpHeight * -2.0f * gravity * gravityMultiplier);
 
-            if (waitingToSendFeedback)
-            {
-                waitingToSendFeedback = false;
-                Player.Instance.ContinueMove();
-            }
-
             if (startGameOnJump)
             {
                 startGameOnJump = false;
                 Player.Instance.StartGame();
+            }
+
+            if (waitingToSendFeedback)
+            {
+                waitingToSendFeedback = false;
+                Player.Instance.ContinueMoveToNextHeigth();
+            }
+
+            if (waitingToSendStickyFloorMoveFeedback)
+            {
+                waitingToSendStickyFloorMoveFeedback = false;
+                Player.Instance.ContinueMoveOnStickyFloor();
             }
         }
     }
@@ -144,32 +174,43 @@ public class Ball : MonoBehaviour
 
     public float GetCurrentSpeed()
     {
-        float time = Time.time - lastJumpTime;
-        float currentSpeed = initialUpVelocity + (gravity * gravityMultiplier * time);
-        if (isDashing)
+        if (state == BallState.JUMPING)
         {
-            float dashTime = (Time.time - lastDashTime);
-            currentSpeed -= dashAcceleration * dashTime;
+            float time = Time.time - lastJumpTime;
+            float currentSpeed = initialUpVelocity + (gravity * gravityMultiplier * time);
+            if (isDashing)
+            {
+                float dashTime = (Time.time - lastDashTime);
+                currentSpeed -= dashAcceleration * dashTime;
+            }
+            return currentSpeed;
         }
-        return currentSpeed;
+        else
+        {
+            return 0;
+        }
     }
 
     public void Squish()
     {
         LeanTween.cancel(mesh.gameObject);
-        mesh.LeanScale(new Vector3(1.3f, 0.7f, 1.3f), 0.1f).setOnComplete(() =>
+        mesh.LeanScale(new Vector3(1.3f, 0.7f, 1.3f), 0.1f);
+
+        if (isFirstBall)
         {
-            if (isFirstBall)
-            {
-                Player.Instance.Jump();
-            }
-        });
+            character.CharacterDown(squishedOffset);
+        }
     }
 
     public void Release()
     {
         LeanTween.cancel(mesh.gameObject);
         mesh.LeanScale(Vector3.one, 0.1f);
+
+        if (isFirstBall)
+        {
+            character.CharacterUp();
+        }
     }
 
     public void InstantSquish()
@@ -180,16 +221,6 @@ public class Ball : MonoBehaviour
     public void SetTrailActive(bool active)
     {
         trail.SetActive(active);
-    }
-
-    public void SetColor(Color color)
-    {
-        meshToChangeColor.material.color = color;
-    }
-
-    public Color GetColor()
-    {
-        return meshToChangeColor.material.color;
     }
 
     public void Kill()
@@ -211,7 +242,7 @@ public class Ball : MonoBehaviour
         CollectableBall cb = other.GetComponent<CollectableBall>();
         if (other.CompareTag("CollectableBall") && cb.GetBall())
         {
-            Player.Instance.AddBall(cb.GetColor());
+            Player.Instance.AddBall();
         }
     }
 
@@ -243,6 +274,11 @@ public class Ball : MonoBehaviour
             waitingToSendFeedback = true;
         }
         return state == BallState.JUMPING;
+    }
+
+    public void SendFeedbackToMoveOnStickyFloor()
+    {
+        waitingToSendStickyFloorMoveFeedback = true;
     }
 
     // last ball
@@ -279,7 +315,7 @@ public class Ball : MonoBehaviour
         }
         else
         {
-            player.FinishGame(true, 2f);
+            player.FinishGame(2f);
         }
     }
 
