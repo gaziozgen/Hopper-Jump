@@ -205,13 +205,13 @@ public class LevelGenerator : MonoBehaviour
 
     private GameObject InstantiatePrefab(string name, Vector3 position, Quaternion rotation, Transform parent)
     {
-        //return null;
-        GameObject variableForPrefab = Resources.Load("Fate Games/Prefabs/" + name, typeof(GameObject)) as GameObject;
+        return null;
+        /*GameObject variableForPrefab = Resources.Load("Fate Games/Prefabs/" + name, typeof(GameObject)) as GameObject;
         GameObject go = PrefabUtility.InstantiatePrefab(variableForPrefab) as GameObject;
         go.transform.SetPositionAndRotation(position, rotation);
         go.name = name;
         go.transform.parent = parent;
-        return go;
+        return go;*/
     }
 
     public void ResetLevel()

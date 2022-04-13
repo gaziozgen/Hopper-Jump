@@ -181,8 +181,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetFrameRate: -1
   ballPrefab: {fileID: 7349050640071416612, guid: e308c585387909f4db66a204372c8ae4, type: 3}
-  extraBallsCount: 0
-  speed: 6
+  extraBallsCount: 2
+  speed: 8
   minJumpHeight: 2
   maxJumpHeight: 8
   jumpHeightChange: 2
@@ -190,7 +190,7 @@ MonoBehaviour:
   minDashTimeOffset: 0.15
   jumpHeightDiffRatio: 0.3
   squishedOffset: 0.7
-  slopeSpeedMultiplier: 3
+  slopeSpeedMultiplier: 2
   finalAreaSpeedMultiplier: 2
   shadowTransform: {fileID: 1294846468874291504}
   myBall: {fileID: 1686546868928838131}
@@ -224,7 +224,7 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1, y: 10, z: 1}
+  m_Size: {x: 1, y: 10000, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &7149758902895735176
 GameObject:
